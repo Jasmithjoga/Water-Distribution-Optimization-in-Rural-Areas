@@ -1,0 +1,87 @@
+#include <iostream>
+#include <vector>
+#include <algorithm>
+using namespace std;
+
+// Structure to represent an edge between two villages
+struct Edge {
+    int u, v;
+    int cost;
+    bool operator<(const Edge& other) const {
+        return cost < other.cost;//compare two edge directly
+    }
+};
+
+// Disjoint Set Union (Union Find) with Path Compression
+class DSU {
+    vector<int> parent, rank;
+public:
+    DSU(int n) {
+        parent.resize(n);
+        rank.resize(n, 0);
+        for(int i = 0; i < n; i++)
+            parent[i] = i;
+    }
+
+    int find(int x) {
+        if(parent[x] != x)
+            parent[x] = find(parent[x]);
+        return parent[x];
+    }
+
+    bool unite(int x, int y) {//sets
+        int px = find(x);
+        int py = find(y);
+        if(px == py) return false;
+
+        if(rank[px] < rank[py])
+            parent[px] = py;
+        else if(rank[px] > rank[py])
+            parent[py] = px;
+        else {
+            parent[py] = px;
+            rank[px]++;
+        }
+        return true;
+    }
+};
+
+int main () {
+    int V, E;
+    cout << "Enter number of villages: ";
+    cin >> V;
+    cout << "Enter number of possible pipelines: ";
+    cin >> E;
+
+    vector<Edge> edges(E);
+    cout << "Enter each pipeline as: Village1 Village2 Cost\n";
+    for(int i = 0; i < E; i++) {
+        cin >> edges[i].u >> edges[i].v >> edges[i].cost;
+    }
+
+    // Sort all edges by cost
+    sort(edges.begin(), edges.end());//krushkal
+
+    DSU dsu(V);
+    int totalCost = 0;
+    vector<Edge> mst;
+
+    for(auto& edge : edges) {
+        if(dsu.unite(edge.u, edge.v)) {
+            mst.push_back(edge);
+            totalCost += edge.cost;
+        }
+    }
+
+    cout << "\nOptimal Pipeline Layout:\n";
+    for(auto& edge : mst) {
+        cout << "Village " << edge.u << " - Village " << edge.v 
+             << " : Cost = " << edge.cost << endl;
+    }
+
+    cout << "Total Minimum Cost: " << totalCost << endl;
+
+    return 0;
+}
+
+
