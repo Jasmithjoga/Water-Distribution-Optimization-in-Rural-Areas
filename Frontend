@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Water Network Simulator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background-color: #f5f7fa;
+      color: #333;
+    }
+
+    header {
+      background: linear-gradient(135deg, #0077ff, #0055aa);
+      color: white;
+      padding: 20px 40px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 600;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 40px auto;
+      padding: 20px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      margin-top: 0;
+      font-size: 22px;
+      color: #0077ff;
+    }
+
+    label {
+      display: inline-block;
+      margin-right: 8px;
+      font-weight: 500;
+    }
+
+    input[type="number"] {
+      padding: 8px;
+      margin: 5px 10px 10px 0;
+      width: 80px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+
+    button {
+      background-color: #0077ff;
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      font-size: 15px;
+      font-weight: 500;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 8px 6px;
+      transition: all 0.2s ease;
+    }
+
+    button:hover {
+      background-color: #005ecf;
+    }
+
+    .section {
+      margin-bottom: 30px;
+    }
+
+    .output {
+      background-color: #f1f3f6;
+      border-left: 4px solid #0077ff;
+      padding: 15px 20px;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 15px;
+      white-space: pre-wrap;
+    }
+
+    .flex-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .flex-row input {
+      margin-bottom: 8px;
+    }
+
+    @media (max-width: 600px) {
+      input[type="number"] {
+        width: 100%;
+        margin-bottom: 10px;
+      }
+
+      .flex-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      button {
+        width: 100%;
+        margin-bottom: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>💧 Water Network Management System</h1>
+  </header>
+
+  <div class="container">
+    <div class="section">
+      <h2>➕ Add Pipeline</h2>
+      <div class="flex-row">
+        <label>From:</label><input type="number" id="from">
+        <label>To:</label><input type="number" id="to">
+        <label>Length (km):</label><input type="number" id="length" step="0.1">
+        <button onclick="addPipeline()">Add Pipeline</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>🚀 Run Algorithms</h2>
+      <div class="flex-row">
+        <label>Start:</label><input type="number" id="start">
+        <label>End:</label><input type="number" id="end">
+      </div>
+      <div class="flex-row">
+        <button onclick="runBFS()">Run BFS</button>
+        <button onclick="runDFS()">Run DFS</button>
+        <button onclick="runDijkstra()">Dijkstra's Shortest Path</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>📋 Output</h2>
+      <div class="output" id="output">Add pipelines and run algorithms to see results here.</div>
+    </div>
+  </div>
+
+  <script>
+    let graph = {};
+
+    function addPipeline() {
+      const u = parseInt(document.getElementById("from").value);
+      const v = parseInt(document.getElementById("to").value);
+      const length = parseFloat(document.getElementById("length").value);
+
+      if (!graph[u]) graph[u] = [];
+      if (!graph[v]) graph[v] = [];
+
+      graph[u].push({ node: v, length });
+      graph[v].push({ node: u, length });
+
+      document.getElementById("output").textContent = ✅ Added pipeline: ${u} ↔ ${v} (${length} km);
+    }
+
+    function runBFS() {
+      const start = parseInt(document.getElementById("start").value);
+      let visited = {};
+      let queue = [start];
+      let order = [];
+      visited[start] = true;
+
+      while (queue.length) {
+        let u = queue.shift();
+        order.push(u);
+
+        for (let neighbor of (graph[u] || [])) {
+          if (!visited[neighbor.node]) {
+            visited[neighbor.node] = true;
+            queue.push(neighbor.node);
+          }
+        }
+      }
+
+      document.getElementById("output").textContent = "🔄 BFS Order:\n" + order.join(" → ");
+    }
+
+    function runDFS() {
+      const start = parseInt(document.getElementById("start").value);
+      let visited = {};
+      let order = [];
+
+      function dfs(u) {
+        visited[u] = true;
+        order.push(u);
+        for (let neighbor of (graph[u] || [])) {
+          if (!visited[neighbor.node]) dfs(neighbor.node);
+        }
+      }
+
+      dfs(start);
+      document.getElementById("output").textContent = "🔁 DFS Order:\n" + order.join(" → ");
+    }
+
+    function runDijkstra() {
+      const start = parseInt(document.getElementById("start").value);
+      const end = parseInt(document.getElementById("end").value);
+
+      let dist = {};
+      let prev = {};
+      let pq = [];
+
+      for (let node in graph) dist[node] = Infinity;
+      dist[start] = 0;
+      pq.push({ node: start, dist: 0 });
+
+      while (pq.length > 0) {
+        pq.sort((a, b) => a.dist - b.dist);
+        let { node: u } = pq.shift();
+
+        for (let neighbor of graph[u] || []) {
+          let v = neighbor.node;
+          let len = neighbor.length;
+          if (dist[v] > dist[u] + len) {
+            dist[v] = dist[u] + len;
+            prev[v] = u;
+            pq.push({ node: v, dist: dist[v] });
+          }
+        }
+      }
+
+      let path = [];
+      let curr = end;
+      while (curr !== undefined) {
+        path.unshift(curr);
+        curr = prev[curr];
+      }
+
+      if (dist[end] === Infinity) {
+        document.getElementById("output").textContent = "❌ No path found.";
+      } else {
+        document.getElementById("output").textContent =
+          📍 Dijkstra Path:\n${path.join(" → ")}\n🧭 Distance: ${dist[end]} km;
+      }
+    }
+  </script>
+</body>
+</html>
